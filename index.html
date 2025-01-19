@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>오늘의 타로 운세</title>
+  <style>
+    /* 기본 리셋 */
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #fce5cd 0%, #f5f7fa 100%);
+      min-height: 100vh;
+      display: flex; 
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 2rem;
+    }
+
+    /* 컨테이너 */
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      background-color: #ffffff;
+      border-radius: 1rem;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    /* 타이틀 & 버튼 */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 1rem;
+    }
+    .header h1 {
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 1rem;
+    }
+    .header .draw-button {
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      background: linear-gradient(135deg, #fdc3a8 0%, #f894c2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .header .draw-button:hover {
+      background: linear-gradient(135deg, #f894c2 0%, #fdc3a8 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+
+    /* 카드 목록 레이아웃 */
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      justify-items: center;
+      padding: 1rem;
+    }
+    @media (max-width: 1200px) {
+      .cards-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 768px) {
+      .cards-container {
+        grid-template-columns: repeat(1, 1fr);
+      }
+    }
+
+    /* 카드 스타일 (플립 애니메이션) */
+    .flip-card {
+      background: transparent;
+      width: 180px;
+      height: 270px;
+      perspective: 1000px; /* 3D 공간감 */
+    }
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+    .flip-card:hover .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+    .flip-card-front,
+    .flip-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden; /* 뒷면 숨김 */
+      border-radius: 1rem;
+      border: 4px solid white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.2rem;
+    }
+
+    /* 카드 앞면 */
+    .flip-card-front {
+      background: linear-gradient(135deg, #fbc2eb 0%, #a18cd1 100%);
+    }
+
+    /* 카드 뒷면 */
+    .flip-card-back {
+      background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+      transform: rotateY(180deg);
+      flex-direction: column;
+    }
+    .card-number {
+      font-size: 2rem; 
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .card-label {
+      font-size: 1rem;
+    }
+
+    /* 운세 결과 박스 */
+    .reading-container {
+      display: none;
+      background-color: #fcfcfc;
+      border-radius: 1rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 2rem;
+      animation: slideUp 0.5s ease;
+    }
+    .reading-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .reading-title {
+      font-size: 1.8rem;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+    .reading-subtitle {
+      font-size: 1.1rem;
+      color: #666;
+    }
+    .reading-section {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background-color: #fff;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .reading-section h3 {
+      color: #f894c2;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+    .reading-section p {
+      line-height: 1.6;
+      color: #444;
+    }
+    .close-reading-btn {
+      display: inline-block;
+      margin: 1rem auto 0;
+      background: linear-gradient(135deg, #fbc2eb 0%, #a18cd1 100%);
+      color: #fff;
+      padding: 0.8rem 1.2rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .close-reading-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+
+    /* 애니메이션 Keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- 헤더 영역 -->
+    <div class="header">
+      <h1>오늘의 타로 운세</h1>
+      <button class="draw-button" onclick="drawCards()">카드 다시 뽑기</button>
+    </div>
+
+    <!-- 카드가 배치될 영역 -->
+    <div id="cardsContainer" class="cards-container"></div>
+
+    <!-- 운세 결과 영역 -->
+    <div id="readingContainer" class="reading-container"></div>
+  </div>
+
+  <script>
+    /* (1) 타로 카드 데이터 */
+    const tarotCards = [
+      /* 예시로 22장. 카드마다 todayMessage, details.today, details.love 등 포함 */
+      {
+        id: 0,
+        name: "광대",
+        title: "The Fool",
+        todayMessage: "오늘은 새로운 시작의 기운이 가득한 날입니다. 준비가 완벽하지 않더라도 첫 걸음을 내딛어보세요.",
+        meaning: "새로운 일의 시작, 출발, 관계의 시작, 사건",
+        details: {
+            today: "당신의 자유로운 영혼이 빛나는 날입니다. 새로운 기회가 찾아올 수 있으니 마음을 열어두세요.",
+            love: "가벼운 만남이나 유머러스한 대화가 기대됩니다. 집착 대신 자유로움을 즐겨보세요.",
+            money: "지출이 있을 수 있지만, 여가나 취미에 투자하는 것도 괜찮습니다. 다만 과소비 주의!",
+            advice: "순수한 열정과 호기심으로 시작해보세요. 실수를 두려워하지 않는 자세가 필요합니다."
+        }
+      },
+      {
+        id: 1,
+        name: "마법사",
+        title: "The Magician",
+        todayMessage: "오늘은 능력을 마음껏 발휘해도 좋은 날입니다. 자신감을 가져보세요.",
+        meaning: "기적을 창출, 무한한 잠재력, 창조적 능력",
+        details: {
+            today: "새로운 아이디어가 샘솟거나, 중요한 프로젝트를 시작하기에 제격인 날입니다.",
+            love: "매력이 돋보이는 하루이니, 마음에 둔 사람이 있다면 적극적으로 다가가 보세요.",
+            money: "재물운이 상승 중. 투자나 계약에 있어서 좋은 흐름이 기대됩니다.",
+            advice: "자신의 역량을 믿고 추진해 나가되, 꼼꼼한 계획도 함께 세우세요."
+        }
+      },
+      {
+        id: 21,
+        name: "세계",
+        title: "The World",
+        todayMessage: "오늘은 완성과 성취의 날입니다. 노력의 결실을 맺을 수 있습니다.",
+        meaning: "한 사이클의 완성, 성취, 마무리 뒤 새 출발",
+        details: {
+          today: "모든 일이 조화롭게 마무리되는 흐름입니다. 새로운 시작을 준비하세요.",
+          love: "완벽한 사랑이 완성되는 날입니다. 서로를 온전히 이해하고 받아들이세요.",
+          money: "재물의 순환이 원활합니다. 새로운 투자를 고려해보세요.",
+          advice: "이제까지의 노력이 빛을 발할 것입니다. 자신감을 가지고 목표를 설정하세요."
+        }
+      },
+      /* (중간 생략: 아래 추가 카드들도 같은 구조) */
+      {
+        id: 2,
+        name: "여사제",
+        title: "The High Priestess",
+        todayMessage: "오늘은 직관이 예리해지고, 조용한 통찰을 얻을 수 있는 날입니다.",
+        meaning: "숨겨진 비밀, 영적 지혜, 직관력",
+        details: {
+            today: "혼자만의 시간을 통해 큰 깨달음을 얻을 수 있습니다.",
+            love: "조급함보다는 신중함이 필요한 시기입니다.",
+            money: "비밀스러운 이득이나 기회가 생길 수 있으니 직관을 믿으세요.",
+            advice: "겉보다 속을 들여다보는 자세가 중요합니다."
+        }
+      },
+      {
+        id: 3,
+        name: "여황제",
+        title: "The Empress",
+        todayMessage: "풍요와 창조성이 가득한 날, 따뜻한 마음으로 주변을 보살펴보세요.",
+        meaning: "만족, 성취, 정신적 물질적 풍요",
+        details: {
+            today: "포근한 분위기 속에서 일이나 인간관계가 순조롭게 흘러갑니다.",
+            love: "성숙한 사랑, 풍부한 감정 표현이 필요한 시기입니다.",
+            money: "노력한 만큼 수확이 있을 수 있습니다. 재정적으로 안정적인 흐름.",
+            advice: "주변 사람들에게 너그러운 마음을 가지면 더 큰 행복이 돌아옵니다."
+        }
+      },
+      {
+        id: 4,
+        name: "황제",
+        title: "The Emperor",
+        todayMessage: "오늘은 결단력과 리더십을 발휘하기 좋은 날입니다. 책임있는 행동을 해보세요.",
+        meaning: "내유외강, 권위, 현실적 부와 성공",
+        details: {
+            today: "체계적인 계획과 추진이 필요한 시점. 스스로를 믿고 진행하세요.",
+            love: "신뢰와 책임감이 중요한 사랑. 다소 보수적으로 보일 수 있습니다.",
+            money: "안정적인 재물운. 계획적인 소비와 투자에 유리합니다.",
+            advice: "리더십을 발휘하되, 주변 조언도 적절히 수용하세요."
+        }
+      },
+      /* ... 필요에 따라 22장 전체를 이어서 배치 ... */
+    ];
+
+    /* (2) 배열 셔플(카드 섞기) */
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    /* (3) 카드 6장 뽑아서 화면에 표시 */
+    function drawCards() {
+      const cardsContainer = document.getElementById('cardsContainer');
+      const readingContainer = document.getElementById('readingContainer');
+      cardsContainer.innerHTML = '';
+      readingContainer.style.display = 'none'; // 기존 결과창 숨김
+
+      // tarotCards에서 랜덤하게 6장 뽑기
+      const selectedCards = shuffleArray([...tarotCards]).slice(0, 6);
+
+      selectedCards.forEach((card, index) => {
+        const flipCard = document.createElement('div');
+        flipCard.className = 'flip-card';
+
+        const flipInner = document.createElement('div');
+        flipInner.className = 'flip-card-inner';
+
+        // 카드 앞면
+        const front = document.createElement('div');
+        front.className = 'flip-card-front';
+        front.innerHTML = `<span>???</span>`;  // 뒷면에서만 카드 정보 보이도록
+
+        // 카드 뒷면
+        const back = document.createElement('div');
+        back.className = 'flip-card-back';
+        back.innerHTML = `
+          <div class="card-number">${index + 1}</div>
+          <div class="card-label">카드 오픈</div>
+        `;
+
+        // 클릭 시 결과 리딩
+        flipInner.onclick = () => showReading(card);
+
+        // flip-card-inner 안에 앞/뒷면 추가
+        flipInner.appendChild(front);
+        flipInner.appendChild(back);
+        flipCard.appendChild(flipInner);
+
+        cardsContainer.appendChild(flipCard);
+      });
+    }
+
+    /* (4) 선택된 카드 운세 리딩 표시 */
+    function showReading(card) {
+      const readingContainer = document.getElementById('readingContainer');
+      readingContainer.style.display = 'block';
+
+      readingContainer.innerHTML = `
+        <div class="reading-header">
+          <h2 class="reading-title">${card.name} (${card.title})</h2>
+        </div>
+
+        <!-- (A) 오늘의 한줄 메시지 -->
+        <div class="reading-section">
+          <h3>🔮 오늘의 메시지</h3>
+          <p>${card.todayMessage}</p>
+        </div>
+
+        <!-- (B) 오늘의 운세 -->
+        <div class="reading-section">
+          <h3>📅 오늘의 운세</h3>
+          <p>${card.details.today}</p>
+        </div>
+
+        <!-- (C) 기본 의미(뜻) -->
+        <div class="reading-section">
+          <h3>📖 기본 의미</h3>
+          <p>${card.meaning}</p>
+        </div>
+        
+        <!-- (D) 연애운 -->
+        <div class="reading-section">
+          <h3>💘 연애운</h3>
+          <p>${card.details.love}</p>
+        </div>
+        
+        <!-- (E) 금전운 -->
+        <div class="reading-section">
+          <h3>💰 금전운</h3>
+          <p>${card.details.money}</p>
+        </div>
+        
+        <!-- (F) 조언 -->
+        <div class="reading-section">
+          <h3>💡 조언</h3>
+          <p>${card.details.advice}</p>
+        </div>
+
+        <button class="close-reading-btn" onclick="drawCards()">
+          결과창 닫기 (다시 뽑기)
+        </button>
+      `;
+
+      // 결과창으로 부드럽게 스크롤
+      readingContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 페이지 로드 시 자동 한번 뽑기
+    drawCards();
+  </script>
+</body>
+</html>
